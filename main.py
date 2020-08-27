@@ -9,13 +9,15 @@ from joblib import Parallel, delayed
 
 THREAD_VALUE = 1
 
-def line_diff(img, start, end):
+def line_diff(img, orig_img, start, end):
+    if (start[0] != end[0]) and (start[1] != end[1]):
+        return start, end, int(1e6)
     img_copy = img.copy()
     rr, cc = line(start[0], start[1], end[0], end[1])
-    img_copy += THREAD_VALUE
-    img_copy = img_copy.clip(img_copy, 0, 255)
-    diff = np.sum(np.absolute(orig_img - orig_copy))
-    return tuple(start, end, diff)
+    img_copy[rr, cc] += THREAD_VALUE
+    img_copy = img_copy.clip(0, 255)
+    diff = np.sum(np.absolute(orig_img - img_copy))
+    return start, end, diff
 
 def add_line(orig_img, line_img):
     x_len, y_len = line_img.shape
@@ -24,24 +26,24 @@ def add_line(orig_img, line_img):
     left_edge = [(0, i) for i in range(y_len)]
     right_edge = [(x_len-1, i) for i in range(y_len)]
 
-    #values = Parallel(n_jobs=-1)(delayed(line_diff)(line_img, start, end) for start, end in combinations(chain(lower_edge, upper_edge, left_edge, right_edge), 2))
-    #start, end, diff = min(values, key=lambda t: t[2])
-    #return line(start[0], start[1], end[0], end[1]), diff
+    values = Parallel(n_jobs=-1)(delayed(line_diff)(line_img, orig_img, start, end) for start, end in combinations(chain(lower_edge, upper_edge, left_edge, right_edge), 2))
+    start, end, diff= min(values, key=lambda t: t[2])
+    return line(start[0], start[1], end[0], end[1]), diff
 
-    least_diff = np.inf
-    best_line = None
-    for start, end in combinations(chain(lower_edge, upper_edge, left_edge, right_edge), 2):
-        if (start[0] != end[0]) and (start[1] != end[1]):
-            # import pdb; pdb.set_trace()
-            orig_copy = line_img.copy()
-            rr, cc = line(start[0], start[1], end[0], end[1])
-            orig_copy[rr, cc] += THREAD_VALUE
-            orig_copy = np.clip(orig_copy, 0, 255)
-            diff = np.sum(np.absolute(orig_img - orig_copy))
-            if diff < least_diff:
-                least_diff = diff
-                best_line = (rr, cc)
-    return best_line, least_diff
+#    least_diff = np.inf
+#    best_line = None
+#    for start, end in combinations(chain(lower_edge, upper_edge, left_edge, right_edge), 2):
+#        if (start[0] != end[0]) and (start[1] != end[1]):
+#            # import pdb; pdb.set_trace()
+#            orig_copy = line_img.copy()
+#            rr, cc = line(start[0], start[1], end[0], end[1])
+#            orig_copy[rr, cc] += THREAD_VALUE
+#            orig_copy = np.clip(orig_copy, 0, 255)
+#            diff = np.sum(np.absolute(orig_img - orig_copy))
+#            if diff < least_diff:
+#                least_diff = diff
+#                best_line = (rr, cc)
+#    return best_line, least_diff
 
 def generate_image(orig_img, max_iter=int(1e4)):
     img = np.zeros((orig_img.shape[0], orig_img.shape[1]), dtype='int8')
