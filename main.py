@@ -11,7 +11,7 @@ THREAD_VALUE = 1
 
 def line_diff(img, orig_img, start, end):
     if (start[0] != end[0]) and (start[1] != end[1]):
-        return start, end, int(1e6)
+        return start, end, np.inf
     img_copy = img.copy()
     rr, cc = line(start[0], start[1], end[0], end[1])
     img_copy[rr, cc] += THREAD_VALUE
