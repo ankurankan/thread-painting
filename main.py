@@ -7,7 +7,7 @@ import numpy as np
 from tqdm import tqdm
 from joblib import Parallel, delayed
 
-THREAD_VALUE = 1
+THREAD_VALUE = 5
 
 def line_diff(img, orig_img, start, end):
     if (start[0] != end[0]) and (start[1] != end[1]):
@@ -45,8 +45,11 @@ def add_line(orig_img, line_img):
 #                best_line = (rr, cc)
 #    return best_line, least_diff
 
-def generate_image(orig_img, max_iter=int(1e4)):
-    img = np.zeros((orig_img.shape[0], orig_img.shape[1]), dtype='int8')
+def generate_image(orig_img, start_image=None, max_iter=int(1e4)):
+    if start_image is None:
+        img = np.zeros((orig_img.shape[0], orig_img.shape[1]), dtype='int8')
+    else:
+        img = start_image
     total = np.sum(orig_img)
     value = np.inf
     curr_diff = np.inf
